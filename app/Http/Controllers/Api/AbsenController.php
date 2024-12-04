@@ -37,7 +37,7 @@ class AbsenController extends Controller
                 'success' => false,
                 'message' => 'Absensi sudah diambil',
                 'data'    => null
-            ]);
+            ], 400);
         }
 
         $now = now();
@@ -48,18 +48,61 @@ class AbsenController extends Controller
                 'success' => false,
                 'message' => 'Bukan waktu absensi',
                 'data'    => null
-            ]);
+            ], 400);
         } else if ($pertemuan->tanggal <  $dateNow) {
             return response()->json([
                 'success' => false,
                 'message' => 'Waktu absensi sudah habis',
                 'data'    => null
-            ]);
+            ], 400);
         }
 
-        if ($pertemuan->is_praktikum) {
+        if ($pertemuan->is_praktikum == 1) {
             $jadwalPraktikum = $pertemuan->sesiMataKuliah->jadwalPraktikum;
             $pass = $dateNow > $jadwalPraktikum->start && $timeNow < $jadwalPraktikum->end;
+
+            if ($pass) {
+                $data = new Absensi();
+                $data->username = $user->username;
+                $data->latitude = $checkInRequest->latitude;
+                $data->longitude = $checkInRequest->longitude;
+                if ($checkInRequest->attachment) {
+                    $file = $checkInRequest->file('attachment');
+                    if ($file != null && $file != '') {
+                        $filename = time() . '.' . $file->getClientOriginalExtension();
+                        $file->move(public_path("/absen"), $filename);
+                    }
+                }
+                $data->attachment = $filename ?? null;
+                $data->date_in = $now;
+                $data->hadir = true;
+                $data->pertemuan_id = $pertemuanID;
+                $data->save();
+                return response()->json([
+                    'success' => true,
+                    'message' => "berhasil",
+                    'data'    => null,
+                ], 200);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Tidak dapat melakukan absen, waktu perkuliahan sudah habis",
+                    'data'    => null,
+                ], 400);
+            }
+        }
+
+        // if ($now > $) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => 'Waktu absensi sudah habis',
+        //         'data'    => null
+        //     ]);
+        // }
+
+        if ($pertemuan->is_praktikum == 0) {
+            $jadwalTeori = $pertemuan->sesiMataKuliah->jadwalTeori;
+            $pass = $dateNow > $jadwalTeori->start && $timeNow < $jadwalTeori->end;
 
             if ($pass) {
                 $data = new Absensi();
@@ -88,19 +131,9 @@ class AbsenController extends Controller
                     'success' => false,
                     'message' => "Tidak dapat melakukan absen, waktu perkuliahan sudah habis",
                     'data'    => null,
-                ]);
+                ], 400);
             }
         }
-
-        // if ($now > $) {
-        //     return response()->json([
-        //         'success' => false,
-        //         'message' => 'Waktu absensi sudah habis',
-        //         'data'    => null
-        //     ]);
-        // }
-
-        return response()->json($pertemuan);
     }
 
     public function getStatus($pertemuanID)
@@ -113,16 +146,16 @@ class AbsenController extends Controller
                 $statusAbsensi->attachment = url('absen/' . $statusAbsensi->attachment);
             }
             return response()->json([
-                'success' => false,
+                'success' => true,
                 'message' => 'Absensi sudah diambil',
                 'data'    => $statusAbsensi
-            ]);
+            ], 200);
         } else {
             return response()->json([
                 'success' => false,
                 'message' => 'Belum ada data absensi',
                 'data'    => null
-            ]);
+            ], 400);
         }
     }
 }

@@ -42,7 +42,7 @@ class PertemuanController extends Controller
         $today = now()->toDateString();
 
         $pertemuan = Pertemuan::with('sesiMataKuliah.dosen', 'sesiMataKuliah.periode_mata_kuliah.mata_kuliah', 'sesiMataKuliah.jadwalTeori', 'sesiMataKuliah.jadwalPraktikum', 'absensi')
-            // ->whereDate('tanggal', '=', $today)
+            ->whereDate('tanggal', '=', $today)
             ->whereHas('sesiMataKuliah', function (Builder $q) {
                 $q->whereHas('mata_kuliah_diambil', function (Builder $query) {
                     $user = Auth::user();

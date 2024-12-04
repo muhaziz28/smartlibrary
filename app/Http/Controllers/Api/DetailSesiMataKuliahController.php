@@ -96,7 +96,7 @@ class DetailSesiMataKuliahController extends Controller
     {
         try {
             $today = Date::now()->toDateString();
-            $pertemuan = Pertemuan::where('sesi_mata_kuliah_id', $id)
+            $pertemuan = Pertemuan::with('sesiMataKuliah.periode_mata_kuliah.mata_kuliah')->where('sesi_mata_kuliah_id', $id)
                 ->whereDate('tanggal', $today)
                 ->get();
 
